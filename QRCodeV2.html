@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRCode AGV Generator</title>
+<link rel="icon" type="image/png" href="pay.png">
+<script src="https://unpkg.com/bwip-js/dist/bwip-js-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ===== RESET & THEME MONITORING ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  padding: 0; 
+  background: #0b0e14; 
+  color: white; 
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body { 
+  display: flex; 
+  flex-direction: column; 
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== HEADER ala Monitoring ===== */
+.header-title { 
+  text-align: center; 
+  padding: 12px 0; 
+  background: #1a1d23; 
+  border-bottom: 2px solid #3498db; 
+  flex-shrink: 0;
+}
+.header-title h1 { 
+  margin: 0; 
+  font-size: 20px; 
+  letter-spacing: 2px; 
+  text-transform: uppercase; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ===== TOOLBAR ala Monitoring ===== */
+.toolbar { 
+  padding: 10px; 
+  background: #1a1d23; 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 8px; 
+  justify-content: center;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+/* Button styles - Sama persis dengan monitoring */
+.cam-btn { 
+  padding: 8px 16px; 
+  background: #252a34; 
+  color: white; 
+  border: 1px solid #444; 
+  cursor: pointer; 
+  border-radius: 4px; 
+  font-weight: bold; 
+  transition: 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+.cam-btn:hover { 
+  background: #2ecc71; 
+  border-color: #2ecc71; 
+  color: #000; 
+}
+.cam-btn.active { 
+  background: #2ecc71; 
+  border-color: #2ecc71; 
+  color: #000; 
+}
+
+.ctrl-btn { 
+  padding: 8px 16px; 
+  border: none; 
+  cursor: pointer; 
+  border-radius: 4px; 
+  font-weight: bold; 
+}
+
+.fullscreen-btn { 
+  background: #038b8b; 
+  color: white; 
+}
+.generate-btn {
+  background: #2ecc71;
+  color: black;
+}
+.pdf-btn {
+  background: #1286f3;
+  color: black;
+}
+
+/* ===== MAIN CONTENT AREA ===== */
+#main-content { 
+  flex: 1; 
+  width: 100%; 
+  background: #0b0e14; 
+  position: relative;
+  overflow-y: auto; 
+  padding: 20px;
+  display: flex;
+  gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Panel kiri dan kanan */
+.panel-left {
+  flex: 0 0 320px;
+  background: #1a1d23;
+  border-radius: 8px;
+  border: 1px solid #333;
+  padding: 15px;
+  height: fit-content;
+}
+
+.panel-right {
+  flex: 1;
+  background: #1a1d23;
+  border-radius: 8px;
+  border: 1px solid #333;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Panel header */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #3498db;
+}
+.panel-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+  letter-spacing: 1px;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.form-group {
+  margin-bottom: 15px;
+}
+.form-group label {
+  display: block;
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-bottom: 4px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  background: #252a34;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+/* Range row */
+.range-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Button group */
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 15px 0;
+}
+
+/* Upload area */
+.upload-area {
+  border: 2px dashed #444;
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+  background: #252a34;
+  color: #7f8c8d;
+}
+.upload-area:hover {
+  border-color: #3498db;
+  background: #2a2f3a;
+  color: white;
+}
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.stat-item {
+  background: #252a34;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  
+}
+
+/* ===== PREVIEW CONTAINER ===== */
+.preview-container {
+  display: grid;
+  gap: 15px;
+  overflow-y: auto;
+  padding: 5px;
+  min-height: 0;
+  flex: 1;
+}
+.preview-container.grid-view {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.preview-container.list-view {
+  grid-template-columns: 1fr;
+}
+
+/* Matrix grid */
+.matrix-grid {
+  background: #0b0e14;
+  border: 2px solid #333;
+  padding: 8px;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  position: relative;
+  transition: 0.3s;
+}
+.matrix-grid:hover {
+  border-color: #3498db;
+}
+.matrix-grid .id-badge {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  background: #e74c3c;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  z-index: 10;
+}
+
+/* Canvas - TIDAK DIUBAH */
+canvas {
+  width: 100%;
+  height: auto;
+  background: white;
+  border-radius: 2px;
+}
+
+/* Shortcut info */
+.shortcut-info {
+  font-size: 11px;
+  color: #7f8c8d;
+  text-align: center;
+  margin-top: 10px;
+  padding: 8px;
+  background: #252a34;
+  border-radius: 4px;
+  border-left: 3px solid #3498db;
+}
+.shortcut-info kbd {
+  background: #0b0e14;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #2ecc71;
+  border: 1px solid #444;
+}
+
+/* Footer */
+footer { 
+  padding: 8px; 
+  text-align: center; 
+  background: #1a1d23; 
+  font-size: 11px; 
+  color: #7f8c8d; 
+  border-top: 1px solid #333;
+  flex-shrink: 0;
+}
+
+/* Loading indicator */
+.loading {
+  text-align: center;
+  padding: 30px;
+  color: #7f8c8d;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1d23;
+}
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3498db;
+}
+</style>
+</head>
+<body>
+
+<div class="header-title">
+    <h1>
+       
+        QRCODE AGV GENERATOR V2
+       
+    </h1>
+</div>
+
+<div class="toolbar">
+    <!-- HANYA TOMBOL YANG RELEVAN: Live Monitor dan QR Generator -->
+    <button class="cam-btn" onclick="window.location.href='AGVCAM Monitoring Single.html'"> LIVE MONITOR</button>
+    <button class="ctrl-btn fullscreen-btn" onclick="toggleFullscreen()"> FULLSCREEN</button>
+    <button class="cam-btn" onclick="showShortcuts()">❓</button>
+</div>
+
+<div id="main-content">
+    <!-- Panel Kiri - Control Panel -->
+    <div class="panel-left">
+        <div class="panel-header">
+            <h2>CONTROL PANEL</h2>
+            <button class="cam-btn" style="padding: 4px 8px;" onclick="clearAll()"> RESET</button>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            📁 KLIK UNTUK UPLOAD FILE
+            <div style="font-size: 10px; margin-top: 5px;">Format: .txt atau .csv</div>
+            <input type="file" id="fileInput" accept=".txt,.csv" style="display:none" onchange="handleFile(event)">
+        </div>
+
+        <!-- Manual Input -->
+        <div class="form-group">
+            <label>MANUAL INPUT (pisah spasi/koma)</label>
+            <textarea id="idInput" rows="6" placeholder="00000001 00000002 00000003" style="resize: none;">00000001 00000002 00000003 00000004 00000005</textarea>
+        </div>
+
+        <!-- Range Generator -->
+        <div class="form-group">
+            <label>RANGE OTOMATIS</label>
+            <div class="range-row">
+                <input type="text" id="rangeStart" placeholder="Mulai" value="00000001">
+                <input type="text" id="rangeEnd" placeholder="Sampai" value="00000010">
+            </div>
+            <button class="cam-btn" style="width:100%; margin-top:5px;" onclick="generateRange()"> GENERATE RANGE</button>
+        </div>
+
+        <!-- Sort Order -->
+        <div class="form-group">
+            <label>URUTAN</label>
+            <select id="sortOrder" onchange="applySort()">
+                <option value="none">DEFAULT</option>
+                <option value="asc">NAIK (A-Z)</option>
+                <option value="desc">TURUN (Z-A)</option>
+            </select>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-group">
+            <button class="ctrl-btn generate-btn" onclick="generate()"> GENERATE</button>
+            <button class="ctrl-btn pdf-btn" onclick="downloadPDF()"> DOWNLOAD PDF</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-item">GENERATE: <span id="totalGenerate">0</span></div>
+            <div class="stat-item">TOTAL QR: <span id="totalQR">0</span></div>
+        </div>
+
+        <!-- Shortcut Info -->
+        <div class="shortcut-info">
+            <kbd>Ctrl+G</kbd> Generate • <kbd>Ctrl+S</kbd> Download • <kbd>F5</kbd> Refresh
+        </div>
+
+        <div class="shortcut-info">
+            <kbd>V2</kbd>
+            <p>• Penambahan fitur upload code, range generate, Ascending & Descending, Acum generate & Total Qr, Shortcut Keyboard, Reset, fullScreen, Help.</p>
+          
+        </div>
+
+    </div>
+
+    <!-- Panel Kanan - Preview Panel -->
+    <div class="panel-right">
+        <div class="panel-header">
+            <h2>PREVIEW</h2>
+            <div>
+                <button class="cam-btn" style="padding: 4px 8px;" onclick="toggleView()" id="viewBtn">GRID</button>
+            </div>
+        </div>
+
+        <!-- Preview Container -->
+        <div id="preview" class="preview-container grid-view">
+            <div class="loading">
+                <div>KLIK GENERATE UNTUK MULAI</div>
+                <div style="font-size: 11px; margin-top: 10px;">atau upload file teks</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    &copy; 2026 | Powered by <strong>Amad Nuramadi</strong> | PT. LEETEX GARMENT INDONESIA
+</footer>
+
+<script>
+// ===== SEMUA FUNGSI ASLI TIDAK DIUBAH =====
+const prefixCodes = [
+    [36,46,56,66],
+    [35,45,55,65],
+    [34,44,54,64],
+    [33,43,53,63]
+];
+
+let currentIds = [];
+let viewMode = 'grid';
+let stats = {
+    generate: parseInt(localStorage.getItem('qrGenCount') || '0'),
+    qr: parseInt(localStorage.getItem('qrTotal') || '0')
+};
+
+// Initialize
+updateStats();
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'g') {
+        e.preventDefault();
+        generate();
+    }
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        downloadPDF();
+    }
+    if (e.key === 'F2') {
+        e.preventDefault();
+        toggleFullscreen();
+    }
+});
+
+// ===== FUNGSI-FUNGSI ASLI =====
+function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        const ids = text.split(/[,\n\s]+/).filter(id => id.trim());
+        document.getElementById('idInput').value = ids.join(' ');
+        generate();
+    };
+    reader.readAsText(file);
+}
+
+function generateRange() {
+    let start = document.getElementById('rangeStart').value;
+    let end = document.getElementById('rangeEnd').value;
+    
+    const padLength = Math.max(start.length, end.length);
+    start = parseInt(start);
+    end = parseInt(end);
+    
+    if (isNaN(start) || isNaN(end) || start > end) {
+        alert('Range tidak valid');
+        return;
+    }
+    
+    const ids = [];
+    for (let i = start; i <= end; i++) {
+        ids.push(i.toString().padStart(padLength, '0'));
+    }
+    
+    document.getElementById('idInput').value = ids.join(' ');
+    generate();
+}
+
+function generate() {
+    const input = document.getElementById('idInput').value;
+    const ids = input.split(/[ ,]+/).filter(id => id.trim());
+    
+    if (ids.length === 0) {
+        alert('Masukkan ID');
+        return;
+    }
+    
+    currentIds = ids;
+    
+    stats.generate++;
+    stats.qr += ids.length;
+    localStorage.setItem('qrGenCount', stats.generate);
+    localStorage.setItem('qrTotal', stats.qr);
+    
+    updateStats();
+    renderPreview(ids);
+}
+
+function createMatrixGrid(id) {
+    const grid = document.createElement('div');
+    grid.className = 'matrix-grid';
+    grid.dataset.id = id;
+    
+    const badge = document.createElement('span');
+    badge.className = 'id-badge';
+    badge.textContent = id;
+    grid.appendChild(badge);
+    
+    for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 100;
+            
+            try {
+                bwipjs.toCanvas(canvas, {
+                    bcid: 'datamatrix',
+                    text: prefixCodes[r][c] + id,
+                    scale: 5,
+                    padding: 3
+                });
+            } catch (err) {
+                console.log('QR error:', err);
+            }
+            
+            grid.appendChild(canvas);
+        }
+    }
+    
+    return grid;
+}
+
+function renderPreview(ids) {
+    const container = document.getElementById('preview');
+    container.innerHTML = '';
+    
+    let index = 0;
+    const batchSize = 3;
+    
+    function renderBatch() {
+        const batch = ids.slice(index, index + batchSize);
+        batch.forEach(id => {
+            container.appendChild(createMatrixGrid(id));
+        });
+        
+        index += batchSize;
+        if (index < ids.length) {
+            setTimeout(renderBatch, 50);
+        }
+    }
+    
+    renderBatch();
+}
+
+function applySort() {
+    const order = document.getElementById('sortOrder').value;
+    if (order === 'none' || currentIds.length === 0) return;
+    
+    const sorted = [...currentIds].sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        return order === 'asc' ? numA - numB : numB - numA;
+    });
+    
+    renderPreview(sorted);
+}
+
+function toggleView() {
+    const container = document.getElementById('preview');
+    const btn = document.getElementById('viewBtn');
+    
+    if (viewMode === 'grid') {
+        container.classList.remove('grid-view');
+        container.classList.add('list-view');
+        btn.textContent = 'LIST';
+        viewMode = 'list';
+    } else {
+        container.classList.remove('list-view');
+        container.classList.add('grid-view');
+        btn.textContent = 'GRID';
+        viewMode = 'grid';
+    }
+}
+
+// ===== FUNGSI DOWNLOAD PDF (TIDAK DIUBAH) =====
+function downloadPDF() {
+    const grids = document.querySelectorAll('.matrix-grid');
+    if (grids.length === 0) {
+        alert('Tidak ada QR code');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({unit: 'mm', format: 'a4'});
+    const margin = 12;
+    const cell = 20;
+    const gapX = 10;
+    const gapY = 14;
+    const perRow = 2;
+
+    let x = margin, y = margin;
+    let pageNum = 1;
+
+    grids.forEach((grid, i) => {
+        const canvases = grid.querySelectorAll('canvas');
+        const id = grid.dataset.id;
+        
+        canvases.forEach((canvas, j) => {
+            const col = j % 4;
+            const row = Math.floor(j / 4);
+            try {
+                pdf.addImage(canvas.toDataURL(), 'PNG', x + col * cell, y + row * cell, cell, cell);
+            } catch (err) {
+                console.log('PDF error:', err);
+            }
+        });
+
+        const w = cell * 4, h = cell * 4;
+        
+        pdf.setLineDashPattern([2, 2], 0);
+        pdf.rect(x - 1, y - 1, w + 2, h + 2);
+        
+        const cx = x + w / 2, cy = y + h / 2;
+        pdf.setFontSize(7);
+        pdf.text(`ID: ${id}`, x + 2, cy, {baseline: 'middle'});
+        pdf.setFontSize(12);
+        pdf.text('+', cx, cy, {align: 'center', baseline: 'middle'});
+        pdf.setFontSize(6);
+        pdf.text('AMNU', cx + 6, cy, {baseline: 'middle'});
+        pdf.setFontSize(8);
+        pdf.text('Y', cx, y + 3, {align: 'center'});
+        pdf.text('X', x + w - 3, cy, {baseline: 'middle'});
+
+        if ((i + 1) % perRow === 0) {
+            x = margin;
+            y += h + gapY;
+        } else {
+            x += w + gapX;
+        }
+        
+        if (y + h > 280) {
+            pdf.addPage();
+            pageNum++;
+            x = margin;
+            y = margin;
+        }
+    });
+
+    pdf.save('QRcodeAGV_Generator.pdf');
+}
+
+function updateStats() {
+    document.getElementById('totalGenerate').textContent = stats.generate;
+    document.getElementById('totalQR').textContent = stats.qr;
+}
+
+function clearAll() {
+    if (confirm('Reset semua data?')) {
+        currentIds = [];
+        document.getElementById('idInput').value = '';
+        document.getElementById('preview').innerHTML = '<div class="loading"><div style="font-size: 15px;">Input code lalu</div><div>KLIK GENERATE UNTUK MULAI</div></div>';
+        stats = { generate: 0, qr: 0 };
+        localStorage.setItem('qrGenCount', '0');
+        localStorage.setItem('qrTotal', '0');
+        updateStats();
+    }
+}
+
+function refreshPage() {
+    location.reload();
+}
+
+function toggleFullscreen() {
+    const content = document.getElementById('main-content');
+    if (!document.fullscreenElement) {
+        content.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function showShortcuts() {
+    const shortcuts = `
+        KEYBOARD SHORTCUTS:
+        • Ctrl+G = Generate QR
+        • Ctrl+S = Download PDF
+        • F2 = Fullscreen
+    `;
+    alert(shortcuts);
+}
+</script>
+</body>
+</html>
